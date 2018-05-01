@@ -3,10 +3,13 @@ language: elixir
 dist: trusty
 sudo: required
 
-otp_release: 19.2
+otp_release: 19.3
 elixir:
+  - 1.6.4
+  - 1.5.3
+  - 1.4.5
   - 1.3.4
-  - 1.4.0
+
 
 env:
   matrix:
@@ -17,9 +20,12 @@ env:
 
 matrix:
   include:
-    otp_release: 18.3
-    elixir: 1.4.0
-    env: CASSANDRA_VERSION=3.9
+    - otp_release: 18.3
+      elixir: 1.4.5
+      env: CASSANDRA_VERSION=3.9
+    - otp_release: 20.3
+      elixir: 1.6.4
+      env: CASSANDRA_VERSION=3.9
 
 jobs:
   include:
