@@ -93,8 +93,8 @@ defmodule Xandra.Calendar do
     defp date_to_iso_days(year, month, day) when year in 0..9999 do
       true = day <= days_in_month(year, month)
 
-      days_in_previous_years(year) + days_before_month(month) +
-        leap_day_offset(year, month) + day - 1
+      days_in_previous_years(year) + days_before_month(month) + leap_day_offset(year, month) + day -
+        1
     end
 
     defp days_in_month(year, 2) do

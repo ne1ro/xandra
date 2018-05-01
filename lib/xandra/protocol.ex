@@ -63,8 +63,7 @@ defmodule Xandra.Protocol do
         else
           _ ->
             raise "the :authentication option must be " <>
-                    "an {auth_module, auth_options} tuple, " <>
-                    "got: #{inspect(authentication)}"
+                    "an {auth_module, auth_options} tuple, " <> "got: #{inspect(authentication)}"
         end
 
       :error ->
@@ -456,18 +455,14 @@ defmodule Xandra.Protocol do
   end
 
   defp encode_value({:tuple, types}, value) when length(types) == tuple_size(value) do
-    for {type, item} <- Enum.zip(types, Tuple.to_list(value)),
-        do: encode_query_value(type, item)
+    for {type, item} <- Enum.zip(types, Tuple.to_list(value)), do: encode_query_value(type, item)
   end
 
-  defp varint_byte_size(value) when value in -128..127,
-    do: 1
+  defp varint_byte_size(value) when value in -128..127, do: 1
 
-  defp varint_byte_size(value) when value > 127,
-    do: 1 + varint_byte_size(value >>> 8)
+  defp varint_byte_size(value) when value > 127, do: 1 + varint_byte_size(value >>> 8)
 
-  defp varint_byte_size(value) when value < -128,
-    do: varint_byte_size(-value - 1)
+  defp varint_byte_size(value) when value < -128, do: varint_byte_size(-value - 1)
 
   @compile {:inline, decode_base16: 1}
   defp decode_base16(value) do
@@ -587,11 +582,9 @@ defmodule Xandra.Protocol do
 
   # Since SELECT statements are not allowed in BATCH queries, there's no need to
   # support %Batch{} in this function.
-  defp new_page(%Simple{}),
-    do: %Page{}
+  defp new_page(%Simple{}), do: %Page{}
 
-  defp new_page(%Prepared{result_columns: result_columns}),
-    do: %Page{columns: result_columns}
+  defp new_page(%Prepared{result_columns: result_columns}), do: %Page{columns: result_columns}
 
   defp rewrite_column_types(columns, options) do
     Enum.map(columns, fn {_, _, _, type} = column ->
