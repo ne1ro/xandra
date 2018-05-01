@@ -29,6 +29,7 @@ matrix:
 jobs:
   include:
     - stage: format
+      sudo: false
       before_install: skip
       script: mix format --check-formatted
 
