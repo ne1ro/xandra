@@ -13,6 +13,7 @@ defmodule Xandra.Protocol do
     Simple,
     TypeParser
   }
+
   alias Xandra.Cluster.StatusChange
 
   @unix_epoch_days 0x80000000
@@ -29,6 +30,7 @@ defmodule Xandra.Protocol do
   defmacrop decode_value({:<-, _, [value, buffer]}, type, do: block) do
     quote do
       <<size::32-signed, unquote(buffer)::bits>> = unquote(buffer)
+
       if size < 0 do
         unquote(value) = nil
         unquote(block)
@@ -40,7 +42,7 @@ defmodule Xandra.Protocol do
     end
   end
 
-  @spec encode_request(Frame.t(kind), term, Keyword.t) :: Frame.t(kind) when kind: var
+  @spec encode_request(Frame.t(kind), term, Keyword.t()) :: Frame.t(kind) when kind: var
   def encode_request(frame, params, options \\ [])
 
   def encode_request(%Frame{kind: :options} = frame, nil, _options) do
@@ -59,8 +61,12 @@ defmodule Xandra.Protocol do
              body <- authenticator.response_body(auth_options) do
           %{frame | body: [<<IO.iodata_length(body)::32>>, body]}
         else
-          _ -> raise "the :authentication option must be an {auth_module, auth_options} tuple, got: #{inspect(authentication)}"
+          _ ->
+            raise "the :authentication option must be " <>
+                    "an {auth_module, auth_options} tuple, " <>
+                    "got: #{inspect(authentication)}"
         end
+
       :error ->
         raise "Cassandra server requires authentication but the :authentication option was not provided"
     end
@@ -72,11 +78,13 @@ defmodule Xandra.Protocol do
 
   def encode_request(%Frame{kind: :query} = frame, %Simple{} = query, options) do
     %{statement: statement, values: values} = query
+
     body = [
       <<byte_size(statement)::32>>,
       statement,
-      encode_params([], values, options, _skip_metadata? = false),
+      encode_params([], values, options, _skip_metadata? = false)
     ]
+
     %{frame | body: body}
   end
 
@@ -88,11 +96,13 @@ defmodule Xandra.Protocol do
   def encode_request(%Frame{kind: :execute} = frame, %Prepared{} = prepared, options) do
     %{id: id, bound_columns: columns, values: values} = prepared
     skip_metadata? = prepared.result_columns != nil
+
     body = [
       <<byte_size(id)::16>>,
       id,
-      encode_params(columns, values, options, skip_metadata?),
+      encode_params(columns, values, options, skip_metadata?)
     ]
+
     %{frame | body: body}
   end
 
@@ -117,8 +127,9 @@ defmodule Xandra.Protocol do
       encode_consistency_level(consistency),
       flags,
       encode_serial_consistency(serial_consistency),
-      if(timestamp, do: <<timestamp::64>>, else: []),
+      if(timestamp, do: <<timestamp::64>>, else: [])
     ]
+
     %{frame | body: body}
   end
 
@@ -149,8 +160,9 @@ defmodule Xandra.Protocol do
     0x0007 => :each_quorum,
     0x0008 => :serial,
     0x0009 => :local_serial,
-    0x000A => :local_one,
+    0x000A => :local_one
   }
+
   for {spec, level} <- consistency_levels do
     defp encode_consistency_level(unquote(level)) do
       <<unquote(spec)::16>>
@@ -169,8 +181,10 @@ defmodule Xandra.Protocol do
     cond do
       values == [] or values == %{} ->
         mask
+
       is_list(values) ->
         mask ||| 0x01
+
       is_map(values) ->
         mask ||| 0x01 ||| 0x40
     end
@@ -206,7 +220,7 @@ defmodule Xandra.Protocol do
       <<page_size::32>>,
       encode_paging_state(paging_state),
       encode_serial_consistency(serial_consistency),
-      if(timestamp, do: <<timestamp::64>>, else: []),
+      if(timestamp, do: <<timestamp::64>>, else: [])
     ]
   end
 
@@ -228,8 +242,8 @@ defmodule Xandra.Protocol do
 
   defp encode_serial_consistency(other) do
     raise ArgumentError,
-      "the :serial_consistency option must be either :serial or :local_serial, " <>
-      "got: #{inspect(other)}"
+          "the :serial_consistency option must be either :serial or :local_serial, " <>
+            "got: #{inspect(other)}"
   end
 
   defp encode_query_in_batch(%Simple{statement: statement, values: values}) do
@@ -237,7 +251,7 @@ defmodule Xandra.Protocol do
       _kind = 0,
       <<byte_size(statement)::32>>,
       statement,
-      encode_query_values([], values),
+      encode_query_values([], values)
     ]
   end
 
@@ -246,7 +260,7 @@ defmodule Xandra.Protocol do
       _kind = 1,
       <<byte_size(id)::16>>,
       id,
-      encode_query_values(bound_columns, values),
+      encode_query_values(bound_columns, values)
     ]
   end
 
@@ -322,11 +336,11 @@ defmodule Xandra.Protocol do
 
   defp encode_value(:date, %Date{} = value) do
     value = Calendar.date_to_unix_days(value)
-    <<(value + @unix_epoch_days)::32>>
+    <<value + @unix_epoch_days::32>>
   end
 
   defp encode_value(:date, value) when value in -@unix_epoch_days..(@unix_epoch_days - 1) do
-    <<(value + @unix_epoch_days)::32>>
+    <<value + @unix_epoch_days::32>>
   end
 
   defp encode_value(:decimal, {value, scale}) do
@@ -346,8 +360,8 @@ defmodule Xandra.Protocol do
   end
 
   defp encode_value(:inet, {n1, n2, n3, n4, n5, n6, n7, n8}) do
-    <<n1::4-bytes, n2::4-bytes, n3::4-bytes, n4::4-bytes,
-      n5::4-bytes, n6::4-bytes, n7::4-bytes, n8::4-bytes>>
+    <<n1::4-bytes, n2::4-bytes, n3::4-bytes, n4::4-bytes, n5::4-bytes, n6::4-bytes, n7::4-bytes,
+      n8::4-bytes>>
   end
 
   defp encode_value(:int, value) when is_integer(value) do
@@ -364,7 +378,7 @@ defmodule Xandra.Protocol do
     for {key, value} <- collection, into: [<<map_size(collection)::32>>] do
       [
         encode_query_value(key_type, key),
-        encode_query_value(value_type, value),
+        encode_query_value(value_type, value)
       ]
     end
   end
@@ -382,7 +396,7 @@ defmodule Xandra.Protocol do
     <<value::64>>
   end
 
-  defp encode_value(:time, value) when value in 0..86399999999999 do
+  defp encode_value(:time, value) when value in 0..86_399_999_999_999 do
     <<value::64>>
   end
 
@@ -408,12 +422,17 @@ defmodule Xandra.Protocol do
     case byte_size(value) do
       16 ->
         value
+
       36 ->
         <<
-          part1::8-bytes, ?-,
-          part2::4-bytes, ?-,
-          part3::4-bytes, ?-,
-          part4::4-bytes, ?-,
+          part1::8-bytes,
+          ?-,
+          part2::4-bytes,
+          ?-,
+          part3::4-bytes,
+          ?-,
+          part4::4-bytes,
+          ?-,
           part5::12-bytes
         >> = value
 
@@ -443,8 +462,10 @@ defmodule Xandra.Protocol do
 
   defp varint_byte_size(value) when value in -128..127,
     do: 1
+
   defp varint_byte_size(value) when value > 127,
     do: 1 + varint_byte_size(value >>> 8)
+
   defp varint_byte_size(value) when value < -128,
     do: varint_byte_size(-value - 1)
 
@@ -468,8 +489,9 @@ defmodule Xandra.Protocol do
     0x2200 => :invalid,
     0x2300 => :invalid_config,
     0x2400 => :already_exists,
-    0x2500 => :unprepared,
+    0x2500 => :unprepared
   }
+
   for {code, reason} <- error_codes do
     defp decode_error_reason(<<unquote(code)::32-signed, buffer::bytes>>) do
       {unquote(reason), buffer}
@@ -482,13 +504,14 @@ defmodule Xandra.Protocol do
     message
   end
 
-  @spec decode_response(Frame.t(:error), term) :: Error.t
+  @spec decode_response(Frame.t(:error), term) :: Error.t()
   @spec decode_response(Frame.t(:ready), nil) :: :ok
-  @spec decode_response(Frame.t(:supported), nil) :: %{optional(String.t) => [String.t]}
-  @spec decode_response(Frame.t(:result), Simple.t | Prepared.t | Batch.t) :: Xandra.result | Prepared.t
+  @spec decode_response(Frame.t(:supported), nil) :: %{optional(String.t()) => [String.t()]}
+  @spec decode_response(Frame.t(:result), Simple.t() | Prepared.t() | Batch.t()) ::
+          Xandra.result() | Prepared.t()
   def decode_response(frame, query \\ nil, options \\ [])
 
-  def decode_response(%Frame{kind: :error, body: body} , _query, _options) do
+  def decode_response(%Frame{kind: :error, body: body}, _query, _options) do
     {reason, buffer} = decode_error_reason(body)
     Error.new(reason, decode_error_message(reason, buffer))
   end
@@ -542,7 +565,11 @@ defmodule Xandra.Protocol do
   end
 
   # Prepared
-  defp decode_result_response(<<0x0004::32-signed, buffer::bits>>, %Prepared{} = prepared, options) do
+  defp decode_result_response(
+         <<0x0004::32-signed, buffer::bits>>,
+         %Prepared{} = prepared,
+         options
+       ) do
     atom_keys? = Keyword.fetch!(options, :atom_keys?)
     decode_string(id <- buffer)
     {%{columns: bound_columns}, buffer} = decode_metadata(buffer, %Page{}, atom_keys?)
@@ -562,6 +589,7 @@ defmodule Xandra.Protocol do
   # support %Batch{} in this function.
   defp new_page(%Simple{}),
     do: %Page{}
+
   defp new_page(%Prepared{result_columns: result_columns}),
     do: %Page{columns: result_columns}
 
@@ -609,11 +637,13 @@ defmodule Xandra.Protocol do
     cond do
       no_metadata == 1 ->
         {page, buffer}
+
       global_table_spec == 1 ->
         decode_string(keyspace <- buffer)
         decode_string(table <- buffer)
         {columns, buffer} = decode_columns(buffer, column_count, {keyspace, table}, atom_keys?, [])
         {%{page | columns: columns}, buffer}
+
       true ->
         {columns, buffer} = decode_columns(buffer, column_count, nil, atom_keys?, [])
         {%{page | columns: columns}, buffer}
@@ -641,14 +671,16 @@ defmodule Xandra.Protocol do
     decode_page_content(buffer, row_count - 1, columns, columns, [[], Enum.reverse(values) | acc])
   end
 
-  defp decode_page_content(<<buffer::bits>>, row_count, columns, [{_, _, _, type} | rest], [values | acc]) do
+  defp decode_page_content(<<buffer::bits>>, row_count, columns, [{_, _, _, type} | rest], [
+         values | acc
+       ]) do
     decode_value(value <- buffer, type) do
       values = [value | values]
       decode_page_content(buffer, row_count, columns, rest, [values | acc])
     end
   end
 
-  defp decode_value(<<value>>, :boolean), do: (value != 0)
+  defp decode_value(<<value>>, :boolean), do: value != 0
 
   defp decode_value(<<value::signed>>, :tinyint), do: value
 
@@ -674,6 +706,7 @@ defmodule Xandra.Protocol do
 
   defp decode_value(<<value::32>>, {:date, [format]}) do
     unix_days = value - @unix_epoch_days
+
     case format do
       :date -> Calendar.date_from_unix_days(unix_days)
       :integer -> unix_days
@@ -786,7 +819,7 @@ defmodule Xandra.Protocol do
   end
 
   defp decode_value_tuple(<<>>, [], acc) do
-    acc |> Enum.reverse |> List.to_tuple
+    acc |> Enum.reverse() |> List.to_tuple()
   end
 
   defp decode_columns(<<buffer::bits>>, 0, _table_spec, _atom_keys?, acc) do
@@ -908,8 +941,9 @@ defmodule Xandra.Protocol do
     "org.apache.cassandra.db.marshal.SimpleDateType" => :date,
     "org.apache.cassandra.db.marshal.ShortType" => :smallint,
     "org.apache.cassandra.db.marshal.ByteType" => :tinyint,
-    "org.apache.cassandra.db.marshal.TimeType" => :time,
+    "org.apache.cassandra.db.marshal.TimeType" => :time
   }
+
   for {class, type} <- custom_types do
     defp custom_type_to_native(unquote(class)) do
       unquote(type)
