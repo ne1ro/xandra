@@ -30,12 +30,10 @@ jobs:
     - stage: format
       before_install: skip
       script: mix format --check-formatted
-    - stage: test
-      script: mix test
 
 stages:
-  - test
   - format
+  - test
 
 # These steps are taken from: http://cassandra.apache.org/doc/latest/getting_started/installing.html#installation-from-binary-tarball-files.
 before_install:
