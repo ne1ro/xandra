@@ -591,7 +591,6 @@ defmodule Xandra.Protocol do
   # Since SELECT statements are not allowed in BATCH queries, there's no need to
   # support %Batch{} in this function.
   defp new_page(%Simple{}), do: %Page{}
-
   defp new_page(%Prepared{result_columns: result_columns}), do: %Page{columns: result_columns}
 
   defp rewrite_column_types(columns, options) do
@@ -689,9 +688,7 @@ defmodule Xandra.Protocol do
   end
 
   defp decode_value(<<value>>, :boolean), do: value != 0
-
   defp decode_value(<<value::signed>>, :tinyint), do: value
-
   defp decode_value(<<value::16-signed>>, :smallint), do: value
 
   defp decode_value(<<value::64>>, {:time, [format]}) do
@@ -702,7 +699,6 @@ defmodule Xandra.Protocol do
   end
 
   defp decode_value(<<value::64-signed>>, :bigint), do: value
-
   defp decode_value(<<value::64-signed>>, :counter), do: value
 
   defp decode_value(<<value::64-signed>>, {:timestamp, [format]}) do
@@ -722,9 +718,7 @@ defmodule Xandra.Protocol do
   end
 
   defp decode_value(<<value::32-signed>>, :int), do: value
-
   defp decode_value(<<value::64-float>>, :double), do: value
-
   defp decode_value(<<value::32-float>>, :float), do: value
 
   defp decode_value(<<data::4-bytes>>, :inet) do
@@ -738,7 +732,6 @@ defmodule Xandra.Protocol do
   end
 
   defp decode_value(<<value::16-bytes>>, :timeuuid), do: value
-
   defp decode_value(<<value::16-bytes>>, :uuid), do: value
 
   defp decode_value(<<scale::32-signed, data::bits>>, :decimal) do
@@ -760,9 +753,7 @@ defmodule Xandra.Protocol do
   end
 
   defp decode_value(<<value::bits>>, :ascii), do: value
-
   defp decode_value(<<value::bits>>, :blob), do: value
-
   defp decode_value(<<value::bits>>, :varchar), do: value
 
   # For legacy compatibility reasons, most non-string types support
