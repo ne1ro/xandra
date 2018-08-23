@@ -43,9 +43,11 @@ defmodule Xandra.Page do
   @doc false
   @spec more_pages_available?(t) :: boolean
   def more_pages_available?(%__MODULE__{paging_state: paging_state}) do
-    IO.warn(
-      "Xandra.Page.more_pages_available?/1 is deprecated, please use \"page.paging_state != nil\" instead"
-    )
+    message =
+      "Xandra.Page.more_pages_available?/1 is deprecated, " <>
+        "please use \"page.paging_state != nil\" instead"
+
+    IO.warn(message)
 
     paging_state != nil
   end

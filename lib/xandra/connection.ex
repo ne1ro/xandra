@@ -120,8 +120,10 @@ defmodule Xandra.Connection do
   end
 
   defp startup_connection(socket, supported_options, compressor, options) do
-    %{"CQL_VERSION" => [cql_version | _], "COMPRESSION" => supported_compression_algorithms} =
-      supported_options
+    %{
+      "CQL_VERSION" => [cql_version | _],
+      "COMPRESSION" => supported_compression_algorithms
+    } = supported_options
 
     requested_options = %{"CQL_VERSION" => cql_version}
 

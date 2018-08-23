@@ -82,7 +82,6 @@ defmodule Xandra.Frame do
   end
 
   defp maybe_compress_body(_compressor = nil, body), do: body
-
   defp maybe_compress_body(compressor, body), do: compressor.compress(body)
 
   defp maybe_decompress_body(_compression? = true, _compressor = nil, _body) do

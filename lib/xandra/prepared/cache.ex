@@ -12,8 +12,12 @@ defmodule Xandra.Prepared.Cache do
 
   @spec insert(t, Prepared.t()) :: :ok
   def insert(table, %Prepared{} = prepared) do
-    %{statement: statement, id: id, bound_columns: bound_columns, result_columns: result_columns} =
-      prepared
+    %{
+      statement: statement,
+      id: id,
+      bound_columns: bound_columns,
+      result_columns: result_columns
+    } = prepared
 
     :ets.insert(table, {statement, id, bound_columns, result_columns})
     :ok
