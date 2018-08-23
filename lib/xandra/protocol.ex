@@ -458,11 +458,15 @@ defmodule Xandra.Protocol do
     for {type, item} <- Enum.zip(types, Tuple.to_list(value)), do: encode_query_value(type, item)
   end
 
-  defp varint_byte_size(value) when value in -128..127, do: 1
+  defp varint_byte_size(value) when value > 127 do
+    1 + varint_byte_size(value >>> 8)
+  end
 
-  defp varint_byte_size(value) when value > 127, do: 1 + varint_byte_size(value >>> 8)
+  defp varint_byte_size(value) when value < -128 do
+    varint_byte_size(-value - 1)
+  end
 
-  defp varint_byte_size(value) when value < -128, do: varint_byte_size(-value - 1)
+  defp varint_byte_size(value), do: 1
 
   @compile {:inline, decode_base16: 1}
   defp decode_base16(value) do
