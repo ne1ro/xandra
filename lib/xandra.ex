@@ -163,9 +163,9 @@ defmodule Xandra do
   @type conn :: DBConnection.conn()
 
   @type xandra_start_option ::
-          {:nodes, [String.t]}
+          {:nodes, [String.t()]}
           | {:compressor, module}
-          | {:authentication, {module, Keyword.t}}
+          | {:authentication, {module, Keyword.t()}}
           | {:atom_keys, boolean}
 
   @type db_connection_start_option :: {atom(), any}

@@ -401,19 +401,23 @@ defmodule DataTypesTest do
     statement = """
     ALTER TYPE profile ADD email text
     """
+
     Xandra.execute!(conn, statement)
 
     statement = """
     ALTER TYPE profile ADD age int
     """
+
     Xandra.execute!(conn, statement)
 
     statement = "INSERT INTO users (id, profile) VALUES (?, ?)"
+
     baz_profile = %{
       "nickname" => "baz",
       "full_name" => %{"first_name" => "See", "last_name" => "Baz"},
       "email" => "baz@example.com"
     }
+
     prepared = Xandra.prepare!(conn, statement)
     Xandra.execute!(conn, prepared, [3, baz_profile])
 

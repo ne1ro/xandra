@@ -528,7 +528,11 @@ defmodule Xandra.Protocol do
     %StatusChange{effect: effect, address: address, port: port}
   end
 
-  def decode_response(%Frame{kind: :result, body: body, atom_keys?: atom_keys?}, %kind{} = query, options)
+  def decode_response(
+        %Frame{kind: :result, body: body, atom_keys?: atom_keys?},
+        %kind{} = query,
+        options
+      )
       when kind in [Simple, Prepared, Batch] do
     decode_result_response(body, query, Keyword.put(options, :atom_keys?, atom_keys?))
   end
@@ -623,7 +627,11 @@ defmodule Xandra.Protocol do
     %{keyspace: keyspace, subject: subject}
   end
 
-  defp decode_metadata(<<flags::4-bytes, column_count::32-signed, buffer::bits>>, page, atom_keys?) do
+  defp decode_metadata(
+         <<flags::4-bytes, column_count::32-signed, buffer::bits>>,
+         page,
+         atom_keys?
+       ) do
     <<_::29, no_metadata::1, has_more_pages::1, global_table_spec::1>> = flags
     {page, buffer} = decode_paging_state(buffer, page, has_more_pages)
 
@@ -634,7 +642,10 @@ defmodule Xandra.Protocol do
       global_table_spec == 1 ->
         decode_string(keyspace <- buffer)
         decode_string(table <- buffer)
-        {columns, buffer} = decode_columns(buffer, column_count, {keyspace, table}, atom_keys?, [])
+
+        {columns, buffer} =
+          decode_columns(buffer, column_count, {keyspace, table}, atom_keys?, [])
+
         {%{page | columns: columns}, buffer}
 
       true ->
