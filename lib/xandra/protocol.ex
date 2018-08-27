@@ -359,8 +359,10 @@ defmodule Xandra.Protocol do
   end
 
   defp encode_value(:inet, {n1, n2, n3, n4, n5, n6, n7, n8}) do
-    <<n1::4-bytes, n2::4-bytes, n3::4-bytes, n4::4-bytes, n5::4-bytes, n6::4-bytes, n7::4-bytes,
-      n8::4-bytes>>
+    <<
+      (<<n1::4-bytes, n2::4-bytes, n3::4-bytes, n4::4-bytes>>),
+      (<<n5::4-bytes, n6::4-bytes, n7::4-bytes, n8::4-bytes>>)
+    >>
   end
 
   defp encode_value(:int, value) when is_integer(value) do
